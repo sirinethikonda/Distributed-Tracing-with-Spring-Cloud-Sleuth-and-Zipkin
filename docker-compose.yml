@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9411/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: inventory-service/Dockerfile
+    container_name: inventory-service
+    ports:
+      - "8082:8082"
+    environment:
+      - ZIPKIN_BASE_URL=http://zipkin:9411
+    depends_on:
+      zipkin:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  order-service:
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    container_name: order-service
+    ports:
+      - "8081:8081"
+    environment:
+      - ZIPKIN_BASE_URL=http://zipkin:9411
+      - INVENTORY_SERVICE_URL=http://inventory-service:8082
+    depends_on:
+      inventory-service:
+        condition: service_healthy
+
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+

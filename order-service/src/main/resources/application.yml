@@ -1,0 +1,20 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: order-service
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_BASE_URL:http://localhost:9411}/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+
+INVENTORY_SERVICE_URL: ${INVENTORY_SERVICE_URL:http://localhost:8082}
